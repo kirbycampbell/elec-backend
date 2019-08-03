@@ -1,12 +1,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+require("dotenv").config({ path: "./.env" });
 
 const app = express();
 
 //Middleware
-app.use(bodyParser.json());
 app.use(cors());
+app.use(bodyParser.json());
 
 const email = require("./routes/api/email");
 

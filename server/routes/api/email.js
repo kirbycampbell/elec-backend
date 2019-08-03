@@ -1,42 +1,39 @@
 const express = require("express");
 const mongodb = require("mongodb");
-
+var cors = require("cors");
+var mailgun = require("mailgun.js");
+var mg = mailgun.client({
+  username: "api",
+  key: `${process.env.REACT_APP_KEY}`
+});
 const router = express.Router();
 
 // get posts
-router.get("/", async (req, res) => {
-  const posts = await loadPostsCollection();
-  res.send(await posts.find({}).toArray());
+router.post("/", cors(), async (req, res) => {
+  let emailForm = req.body.emailForm;
+  if (emailForm.email.length > 4) {
+    mg.messages
+      .create("sandboxe0be8744de3342afa055b7312a8ac166.mailgun.org", {
+        from: `${emailForm.email}`,
+        to: ["johnkirbycampbell@gmail.com"],
+        subject: `Message from ${emailForm.name}`,
+        text: `<div><h1>Message from ${emailForm.name}</h1><p>${
+          emailForm.comment
+        }</p><br /> <p>Contact User at: <br />${emailForm.email}<br />${
+          emailForm.phone
+        }<br />${emailForm.address} ${emailForm.cityStateZip}</p></div>`,
+        html: `<div><h1>Message from ${emailForm.name}</h1><p>${
+          emailForm.comment
+        }</p><br /> <p>Contact User at: <br />${emailForm.email}<br />${
+          emailForm.phone
+        }<br />${emailForm.address} ${emailForm.cityStateZip}</p></div>`
+      })
+      .then(msg => {
+        console.log(msg);
+      }) // logs response data
+      .catch(err => console.log(err)); // logs any error
+    //res.status(201).send();
+  }
 });
-
-// add posts
-router.post("/", async (req, res) => {
-  const posts = await loadPostsCollection();
-  await posts.insertOne({
-    text: req.body.text.text,
-    title: req.body.text.title,
-    image: req.body.text.image,
-    createdAt: new Date()
-  });
-  res.status(201).send();
-});
-
-// delete posts
-router.delete("/:id", async (req, res) => {
-  const posts = await loadPostsCollection();
-  await posts.deleteOne({ _id: new mongodb.ObjectID(req.params.id) });
-  res.status(200).send();
-});
-
-//loadPostsCollection from MongoDB
-async function loadPostsCollection() {
-  const client = await mongodb.MongoClient.connect(
-    "mongodb://kirbycampbell:abc123@ds349587.mlab.com:49587/kirbyexpress",
-    {
-      useNewUrlParser: true
-    }
-  );
-  return client.db("kirbyexpress").collection("posts");
-}
 
 module.exports = router;
